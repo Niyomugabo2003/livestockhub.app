@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Profile - LivestockHub{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">My Profile</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <h5>Personal Information</h5>
+                        {{ user_form|crispy }}
+
+                        <!-- Phone Number Section -->
+                        <hr>
+                        <h5>Phone Number</h5>
+                        {% if phone_set %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>Your phone number is set and will be used for order updates and delivery coordination.
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Please add your phone number for order updates and delivery coordination.
+                        </div>
+                        {% endif %}
+                        {{ phone_form|crispy }}
+
+                        {% if user.user_type == 'seller' and seller_form %}
+                        <hr>
+                        <h5>Business Information</h5>
+                        {{ seller_form|crispy }}
+
+                        <div class="alert alert-info">
+                            <strong>Seller Status:</strong>
+                            {% if user.is_seller_approved %}
+                                <span class="badge bg-success">Approved</span>
+                            {% else %}
+                                <span class="badge bg-warning">Pending Approval</span>
+                                <small class="d-block mt-1">Your seller account is awaiting admin approval.</small>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <button type="submit" class="btn btn-success">Update Profile</button>
+                    </form>
+                </div>
+            </div>
+
+            {% if user.user_type == 'seller' and user.is_seller_approved %}
+            <div class="card mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Seller Quick Links</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <a href="{% url 'marketplace:seller_dashboard' %}" class="btn btn-outline-info w-100">Seller Dashboard</a>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <a href="{% url 'marketplace:seller_products' %}" class="btn btn-outline-info w-100">Manage Products</a>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <a href="{% url 'marketplace:add_product' %}" class="btn btn-outline-info w-100">Add New Product</a>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <a href="{% url 'marketplace:seller_orders' %}" class="btn btn-outline-info w-100">View Orders</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Account Summary</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>User Type:</strong>
+                        <span class="badge bg-{% if user.user_type == 'seller' %}success{% elif user.user_type == 'admin' %}danger{% else %}info{% endif %}">
+                            {{ user.get_user_type_display }}
+                        </span>
+                    </p>
+
+                    <p><strong>Member Since:</strong> {{ user.date_joined|date:"M d, Y" }}</p>
+
+                    {% if user.user_type == 'customer' %}
+                    <p><strong>Orders Placed:</strong> {{ total_orders }}</p>
+                    {% elif user.user_type == 'seller' %}
+                    <p><strong>Products Listed:</strong> {{ user.product_set.count }}</p>
+                    <p><strong>Total Sales:</strong> RWF {{ user.seller_profile.total_sales }}</p>
+                    {% endif %}
+
+                    <!-- Phone Status -->
+                    <p><strong>Phone Status:</strong>
+                        {% if phone_set %}
+                        <span class="badge bg-success"><i class="fas fa-check me-1"></i>Set</span>
+                        {% else %}
+                        <span class="badge bg-warning"><i class="fas fa-exclamation-triangle me-1"></i>Not Set</span>
+                        {% endif %}
+                    </p>
+
+                    {% if phone_set %}
+                    <p><strong>Phone:</strong> {{ user_phone }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    {% if user.user_type == 'customer' %}
+                    <a href="{% url 'marketplace:customer_dashboard' %}" class="btn btn-outline-info w-100 mb-2">
+                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                    </a>
+                    <a href="{% url 'marketplace:customer_orders' %}" class="btn btn-outline-info w-100 mb-2">
+                        <i class="fas fa-shopping-bag me-2"></i>My Orders
+                    </a>
+                    {% elif user.user_type == 'seller' %}
+                    <a href="{% url 'marketplace:seller_dashboard' %}" class="btn btn-outline-info w-100 mb-2">
+                        <i class="fas fa-tachometer-alt me-2"></i>Seller Dashboard
+                    </a>
+                    <a href="{% url 'marketplace:seller_products' %}" class="btn btn-outline-info w-100 mb-2">
+                        <i class="fas fa-box me-2"></i>My Products
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'marketplace:home' %}" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-home me-2"></i>Browse Marketplace
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

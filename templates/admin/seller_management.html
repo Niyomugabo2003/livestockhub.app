@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Seller Management - LivestockHub{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h1>Seller Management</h1>
+    
+    <div class="card mt-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Business Name</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Approval Status</th>
+                            <th>Total Products</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for seller in sellers %}
+                        <tr>
+                            <td>{{ seller.seller_profile.business_name }}</td>
+                            <td>{{ seller.username }}</td>
+                            <td>{{ seller.email }}</td>
+                            <td>
+                                {% if seller.is_seller_approved %}
+                                <span class="badge bg-success">Approved</span>
+                                {% else %}
+                                <span class="badge bg-warning">Pending Approval</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ seller.product_set.count }}</td>
+                            <td>
+                                <form method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="seller_id" value="{{ seller.id }}">
+                                    <button type="submit" name="action" value="toggle_approval" 
+                                            class="btn btn-sm {% if seller.is_seller_approved %}btn-warning{% else %}btn-success{% endif %}">
+                                        {% if seller.is_seller_approved %}Unapprove{% else %}Approve{% endif %}
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

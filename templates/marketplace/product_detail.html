@@ -1,0 +1,395 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ product.name }} - LivestockHub{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- Product Images Gallery -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <!-- Main Image with Navigation -->
+                    <div class="product-gallery">
+                        <div class="main-image text-center mb-3">
+                            {% if product.image %}
+                                <img src="{{ product.image.url }}" 
+                                     alt="{{ product.name }}" 
+                                     class="img-fluid rounded main-product-image"
+                                     id="mainProductImage"
+                                     style="max-height: 400px; object-fit: cover; cursor: zoom-in;">
+                            {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                     style="height: 400px;">
+                                    <div class="text-center">
+                                        <i class="fas fa-image fa-4x text-muted mb-3"></i>
+                                        <p class="text-muted">No Image Available</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Image Navigation -->
+                        {% if product.image2 or product.image3 %}
+                        <div class="image-navigation d-flex justify-content-center align-items-center mb-3">
+                            <button class="btn btn-outline-secondary me-3 nav-btn" onclick="previousImage()" id="prevBtn" style="display: none;">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            
+                            <div class="image-thumbnails d-flex justify-content-center">
+                                {% if product.image %}
+                                <img src="{{ product.image.url }}" 
+                                     alt="{{ product.name }}" 
+                                     class="img-thumbnail mx-1 thumbnail-active"
+                                     style="height: 60px; width: 60px; object-fit: cover; cursor: pointer;"
+                                     onclick="changeMainImage('{{ product.image.url }}', this)">
+                                {% endif %}
+                                
+                                {% if product.image2 %}
+                                <img src="{{ product.image2.url }}" 
+                                     alt="{{ product.name }}" 
+                                     class="img-thumbnail mx-1"
+                                     style="height: 60px; width: 60px; object-fit: cover; cursor: pointer;"
+                                     onclick="changeMainImage('{{ product.image2.url }}', this)">
+                                {% endif %}
+                                
+                                {% if product.image3 %}
+                                <img src="{{ product.image3.url }}" 
+                                     alt="{{ product.name }}" 
+                                     class="img-thumbnail mx-1"
+                                     style="height: 60px; width: 60px; object-fit: cover; cursor: pointer;"
+                                     onclick="changeMainImage('{{ product.image3.url }}', this)">
+                                {% endif %}
+                            </div>
+                            
+                            <button class="btn btn-outline-secondary ms-3 nav-btn" onclick="nextImage()" id="nextBtn" style="display: none;">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Information -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <!-- Breadcrumb -->
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'marketplace:home' %}">Home</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'marketplace:product_list' %}">Products</a></li>
+                            <li class="breadcrumb-item active">{{ product.category.name }}</li>
+                        </ol>
+                    </nav>
+
+                    <h1 class="h2 mb-3">{{ product.name }}</h1>
+                    
+                    <!-- Seller Info -->
+                    <div class="mb-3">
+                        <small class="text-muted">Sold by: </small>
+                        <strong>{{ product.seller.username }}'s Business</strong>
+                    </div>
+
+                    <!-- Price -->
+                    <div class="mb-4">
+                        <h2 class="text-primary mb-1">RWF {{ product.price }}</h2>
+                        <small class="text-muted">Per animal</small>
+                    </div>
+
+                    <!-- Stock & Category -->
+                    <div class="mb-4">
+                        <p class="mb-2">
+                            <i class="fas fa-box text-success"></i>
+                            <strong>{{ product.stock_quantity }}</strong> in stock
+                        </p>
+                        <p class="mb-2">
+                            <i class="fas fa-tag text-info"></i>
+                            <strong>{{ product.get_livestock_type_display }}</strong>
+                        </p>
+                        {% if product.animal_type %}
+                        <p class="mb-2">
+                            <i class="fas fa-paw text-warning"></i>
+                            Animal Type: <strong>{{ product.get_animal_type_display }}</strong>
+                        </p>
+                        {% endif %}
+                        <p class="mb-0">
+                            <i class="fas fa-folder text-secondary"></i>
+                            Category: <strong>{{ product.category.name }}</strong>
+                        </p>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-4">
+                        <h5>Description</h5>
+                        <p class="text-muted" style="line-height: 1.6;">
+                            {{ product.description|linebreaks }}
+                        </p>
+                    </div>
+
+                    <!-- Add to Cart Form -->
+                    {% if user.is_authenticated %}
+                        <form method="post" action="{% url 'marketplace:add_to_cart' product.id %}">
+                            {% csrf_token %}
+                            <div class="row align-items-center">
+                                <div class="col-md-4 mb-3">
+                                    <label for="quantity" class="form-label">Quantity</label>
+                                    <input type="number" 
+                                           id="quantity" 
+                                           name="quantity" 
+                                           value="1" 
+                                           min="1" 
+                                           max="{{ product.stock_quantity }}"
+                                           class="form-control">
+                                </div>
+                                <div class="col-md-8 mb-3">
+                                    <button type="submit" 
+                                            class="btn btn-primary btn-lg w-100"
+                                            {% if product.stock_quantity == 0 %}disabled{% endif %}>
+                                        <i class="fas fa-shopping-cart"></i>
+                                        {% if product.stock_quantity == 0 %}
+                                            Out of Stock
+                                        {% else %}
+                                            Add to Cart
+                                        {% endif %}
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            Please <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="alert-link">login</a> to purchase this product.
+                        </div>
+                    {% endif %}
+
+                    <!-- Product Metadata -->
+                    <div class="mt-4 pt-3 border-top">
+                        <small class="text-muted">
+                            <i class="fas fa-calendar"></i>
+                            Listed: {{ product.created_at|date:"M d, Y" }}
+                        </small>
+                        {% if product.updated_at != product.created_at %}
+                        <br>
+                        <small class="text-muted">
+                            <i class="fas fa-sync"></i>
+                            Updated: {{ product.updated_at|date:"M d, Y" }}
+                        </small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Products -->
+    {% if related_products %}
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3 class="mb-4">Related Products</h3>
+            <div class="row">
+                {% for related_product in related_products %}
+                <div class="col-md-3 mb-4">
+                    <div class="card h-100">
+                        {% if related_product.image %}
+                        <img src="{{ related_product.image.url }}" 
+                             class="card-img-top" 
+                             alt="{{ related_product.name }}"
+                             style="height: 200px; object-fit: cover;">
+                        {% else %}
+                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                             style="height: 200px;">
+                            <i class="fas fa-image fa-2x text-muted"></i>
+                        </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ related_product.name|truncatewords:4 }}</h5>
+                            <p class="card-text text-muted small">{{ related_product.description|truncatewords:10 }}</p>
+                            <p class="h5 text-primary mb-2">RWF {{ related_product.price }}</p>
+                            <small class="text-muted">{{ related_product.get_livestock_type_display }}</small>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <a href="{% url 'marketplace:product_detail' related_product.id %}" 
+                               class="btn btn-outline-primary btn-sm w-100">
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Lightbox Modal -->
+<div class="modal fade" id="imageLightbox" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-dark border-0">
+            <div class="modal-header border-0">
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img src="" alt="" class="img-fluid" id="lightboxImage" style="max-height: 70vh; object-fit: contain;">
+                <div class="lightbox-navigation mt-3">
+                    <button class="btn btn-light me-2" onclick="lightboxPreviousImage()">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span class="text-white mx-3" id="lightboxCounter">1 / {{ images_count }}</span>
+                    <button class="btn btn-light ms-2" onclick="lightboxNextImage()">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .thumbnail-active {
+        border: 3px solid #0d6efd !important;
+    }
+    
+    .img-thumbnail:hover {
+        border-color: #0d6efd;
+        transform: scale(1.05);
+        transition: all 0.3s ease;
+    }
+    
+    .main-product-image:hover {
+        transform: scale(1.02);
+        transition: transform 0.3s ease;
+    }
+</style>
+
+<script>
+    // Global variables
+    let currentImageIndex = 0;
+    let images = [];
+    
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Collect all available images
+        const thumbnails = document.querySelectorAll('.image-thumbnails .img-thumbnail');
+        images = Array.from(thumbnails).map(thumb => thumb.src);
+        
+        // Show navigation buttons if there are multiple images
+        if (images.length > 1) {
+            document.getElementById('prevBtn').style.display = 'block';
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+        
+        // Add click event to main image for lightbox
+        const mainImage = document.getElementById('mainProductImage');
+        if (mainImage) {
+            mainImage.addEventListener('click', function() {
+                openLightbox(this.src);
+            });
+        }
+    });
+    
+    function changeMainImage(imageUrl, element) {
+        // Update main image
+        const mainImage = document.getElementById('mainProductImage');
+        if (mainImage) {
+            mainImage.src = imageUrl;
+        }
+        
+        // Update active thumbnail
+        document.querySelectorAll('.img-thumbnail').forEach(thumb => {
+            thumb.classList.remove('thumbnail-active');
+        });
+        element.classList.add('thumbnail-active');
+        
+        // Update current image index
+        currentImageIndex = images.indexOf(imageUrl);
+    }
+    
+    function previousImage() {
+        if (images.length > 1) {
+            currentImageIndex = (currentImageIndex - 1 + images.length) % images.length;
+            const thumbnails = document.querySelectorAll('.img-thumbnail');
+            if (thumbnails[currentImageIndex]) {
+                changeMainImage(images[currentImageIndex], thumbnails[currentImageIndex]);
+            }
+        }
+    }
+    
+    function nextImage() {
+        if (images.length > 1) {
+            currentImageIndex = (currentImageIndex + 1) % images.length;
+            const thumbnails = document.querySelectorAll('.img-thumbnail');
+            if (thumbnails[currentImageIndex]) {
+                changeMainImage(images[currentImageIndex], thumbnails[currentImageIndex]);
+            }
+        }
+    }
+    
+    function openLightbox(imageUrl) {
+        const lightboxImage = document.getElementById('lightboxImage');
+        const lightboxCounter = document.getElementById('lightboxCounter');
+        
+        if (lightboxImage) {
+            lightboxImage.src = imageUrl;
+            currentImageIndex = images.indexOf(imageUrl);
+            
+            if (lightboxCounter) {
+                lightboxCounter.textContent = (currentImageIndex + 1) + ' / ' + images.length;
+            }
+            
+            const lightbox = new bootstrap.Modal(document.getElementById('imageLightbox'));
+            lightbox.show();
+        }
+    }
+    
+    function lightboxPreviousImage() {
+        if (images.length > 1) {
+            currentImageIndex = (currentImageIndex - 1 + images.length) % images.length;
+            const lightboxImage = document.getElementById('lightboxImage');
+            const lightboxCounter = document.getElementById('lightboxCounter');
+            
+            if (lightboxImage) {
+                lightboxImage.src = images[currentImageIndex];
+            }
+            
+            if (lightboxCounter) {
+                lightboxCounter.textContent = (currentImageIndex + 1) + ' / ' + images.length;
+            }
+        }
+    }
+    
+    function lightboxNextImage() {
+        if (images.length > 1) {
+            currentImageIndex = (currentImageIndex + 1) % images.length;
+            const lightboxImage = document.getElementById('lightboxImage');
+            const lightboxCounter = document.getElementById('lightboxCounter');
+            
+            if (lightboxImage) {
+                lightboxImage.src = images[currentImageIndex];
+            }
+            
+            if (lightboxCounter) {
+                lightboxCounter.textContent = (currentImageIndex + 1) + ' / ' + images.length;
+            }
+        }
+    }
+    
+    // Keyboard navigation for lightbox
+    document.addEventListener('keydown', function(e) {
+        const lightbox = document.getElementById('imageLightbox');
+        if (lightbox && lightbox.classList.contains('show')) {
+            if (e.key === 'ArrowLeft') {
+                lightboxPreviousImage();
+            } else if (e.key === 'ArrowRight') {
+                lightboxNextImage();
+            } else if (e.key === 'Escape') {
+                bootstrap.Modal.getInstance(lightbox).hide();
+            }
+        }
+    });
+</script>
+{% endblock %}

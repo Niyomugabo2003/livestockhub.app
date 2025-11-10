@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Order Management - LivestockHub{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h1>Order Management</h1>
+    
+    <div class="card mt-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Order #</th>
+                            <th>Customer</th>
+                            <th>Amount (RWF)</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Update Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td><strong>{{ order.order_number }}</strong></td>
+                            <td>{{ order.customer.username }}</td>
+                            <td>{{ order.total_amount }}</td>
+                            <td>
+                                <span class="badge bg-{% if order.status == 'delivered' %}success{% elif order.status == 'cancelled' %}danger{% else %}warning{% endif %}">
+                                    {{ order.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ order.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <form method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="order_id" value="{{ order.id }}">
+                                    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                                        {% for status_code, status_name in order.ORDER_STATUS %}
+                                        <option value="{{ status_code }}" {% if order.status == status_code %}selected{% endif %}>
+                                            {{ status_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

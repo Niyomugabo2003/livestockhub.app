@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}User Management - LivestockHub{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h1>User Management</h1>
+    
+    <div class="card mt-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>User Type</th>
+                            <th>Status</th>
+                            <th>Date Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                <span class="badge bg-{% if user.user_type == 'admin' %}danger{% elif user.user_type == 'seller' %}success{% else %}info{% endif %}">
+                                    {{ user.get_user_type_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if user.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                                
+                                {% if user.user_type == 'seller' %}
+                                <br>
+                                {% if user.is_seller_approved %}
+                                <span class="badge bg-success">Approved</span>
+                                {% else %}
+                                <span class="badge bg-warning">Pending</span>
+                                {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>{{ user.date_joined|date:"M d, Y" }}</td>
+                            <td>
+                                <form method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                                    
+                                    <button type="submit" name="action" value="toggle_active" 
+                                            class="btn btn-sm {% if user.is_active %}btn-warning{% else %}btn-success{% endif %}">
+                                        {% if user.is_active %}Deactivate{% else %}Activate{% endif %}
+                                    </button>
+                                    
+                                    {% if user.user_type == 'seller' and not user.is_seller_approved %}
+                                    <button type="submit" name="action" value="approve_seller" 
+                                            class="btn btn-sm btn-success mt-1">
+                                        Approve Seller
+                                    </button>
+                                    {% endif %}
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Checkout - LivestockHub{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Checkout</h1>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">Shipping Information</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="checkout-form">
+                        {% csrf_token %}
+
+                        <!-- Display form errors if any -->
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+
+                        <!-- Shipping Information -->
+                        <div class="mb-4">
+                            {{ form.shipping_address|as_crispy_field }}
+                            {{ form.shipping_city|as_crispy_field }}
+                            {{ form.customer_phone|as_crispy_field }}
+                            {{ form.shipping_phone|as_crispy_field }}
+                            {{ form.notes|as_crispy_field }}
+                        </div>
+                        
+                        <!-- Payment Method Section -->
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2">Payment Method</h5>
+                            
+                            <!-- MTN Option -->
+                            <div class="payment-option card mb-2">
+                                <div class="card-body">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="payment_method" 
+                                               id="mtn-payment" value="mtn" required>
+                                        <label class="form-check-label d-flex align-items-center" for="mtn-payment">
+                                            <span class="payment-icon bg-warning text-dark px-2 py-1 rounded me-3">MTN</span>
+                                            <div>
+                                                <strong>MTN Mobile Money</strong>
+                                                <p class="mb-0 text-muted small">Pay with your MTN Mobile Money account</p>
+                                            </div>
+                                        </label>
+                                    </div>
+                                    
+                                    <!-- MTN Details (shown when MTN is selected) -->
+                                    <div id="mtn-details" class="mt-3 p-3 bg-light rounded" style="display: none;">
+                                        {{ form.mtn_phone|as_crispy_field }}
+                                        <small class="text-muted">You will receive a prompt on your phone to complete the payment.</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- PayPal Option -->
+                            <div class="payment-option card">
+                                <div class="card-body">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="payment_method" 
+                                               id="paypal-payment" value="paypal" required>
+                                        <label class="form-check-label d-flex align-items-center" for="paypal-payment">
+                                            <span class="payment-icon bg-primary text-white px-2 py-1 rounded me-3">PayPal</span>
+                                            <div>
+                                                <strong>PayPal</strong>
+                                                <p class="mb-0 text-muted small">Pay securely with your PayPal account</p>
+                                            </div>
+                                        </label>
+                                    </div>
+                                    
+                                    <!-- PayPal Details (shown when PayPal is selected) -->
+                                    <div id="paypal-details" class="mt-3 p-3 bg-light rounded" style="display: none;">
+                                        <p class="mb-2">You will be redirected to PayPal to complete your payment securely.</p>
+                                        <p class="mb-0">After completing the payment, you will be returned to LivestockHub.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success btn-lg">Place Order</button>
+                        <a href="{% url 'marketplace:cart' %}" class="btn btn-secondary">Back to Cart</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Order Summary</h4>
+                </div>
+                <div class="card-body">
+                    {% for item in cart.items.all %}
+                    <div class="d-flex justify-content-between mb-2">
+                        <div>
+                            <h6 class="mb-0">{{ item.product.name }}</h6>
+                            <small class="text-muted">Qty: {{ item.quantity }}</small>
+                        </div>
+                        <div>RWF {{ item.total_price }}</div>
+                    </div>
+                    <hr>
+                    {% endfor %}
+                    
+                    <div class="d-flex justify-content-between">
+                        <strong>Total:</strong>
+                        <strong>RWF {{ cart.total_price }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for payment method selection -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const mtnRadio = document.getElementById('mtn-payment');
+    const paypalRadio = document.getElementById('paypal-payment');
+    const mtnDetails = document.getElementById('mtn-details');
+    const paypalDetails = document.getElementById('paypal-details');
+    
+    function updatePaymentDetails() {
+        // Hide all details first
+        mtnDetails.style.display = 'none';
+        paypalDetails.style.display = 'none';
+        
+        // Show selected payment method details
+        if (mtnRadio.checked) {
+            mtnDetails.style.display = 'block';
+            // Make MTN phone required when MTN is selected
+            document.querySelector('[name="mtn_phone"]').required = true;
+        } else if (paypalRadio.checked) {
+            paypalDetails.style.display = 'block';
+            // Make MTN phone not required for PayPal
+            document.querySelector('[name="mtn_phone"]').required = false;
+        }
+    }
+    
+    // Add event listeners to radio buttons
+    mtnRadio.addEventListener('change', updatePaymentDetails);
+    paypalRadio.addEventListener('change', updatePaymentDetails);
+    
+    // Initialize on page load
+    updatePaymentDetails();
+    
+    // Form validation
+    document.getElementById('checkout-form').addEventListener('submit', function(e) {
+        const selectedPayment = document.querySelector('input[name="payment_method"]:checked');
+        if (!selectedPayment) {
+            e.preventDefault();
+            alert('Please select a payment method');
+            return false;
+        }
+        
+        if (selectedPayment.value === 'mtn') {
+            const mtnPhone = document.querySelector('[name="mtn_phone"]').value;
+            if (!mtnPhone) {
+                e.preventDefault();
+                alert('Please enter your MTN phone number');
+                return false;
+            }
+        }
+    });
+});
+</script>
+
+<style>
+.payment-option {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.payment-option:hover {
+    border-color: #dee2e6;
+}
+
+.payment-option .form-check-input:checked ~ .form-check-label {
+    font-weight: bold;
+}
+
+.payment-option .form-check-input:checked {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+.payment-icon {
+    font-weight: bold;
+    min-width: 50px;
+    text-align: center;
+}
+</style>
+{% endblock %}

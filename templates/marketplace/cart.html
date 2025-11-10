@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block title %}Shopping Cart - LivestockHub{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Shopping Cart</h1>
+
+    {% if cart.items.count > 0 %}
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Price</th>
+                            <th>Quantity</th>
+                            <th>Total</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in cart.items.all %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if item.product.image %}
+                                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}"
+                                         style="width: 60px; height: 60px; object-fit: cover;" class="me-3 rounded">
+                                    {% else %}
+                                    <div class="bg-light rounded d-flex align-items-center justify-content-center me-3"
+                                         style="width: 60px; height: 60px;">
+                                        <i class="fas fa-image text-muted"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <h6 class="mb-0">{{ item.product.name }}</h6>
+                                        <small class="text-muted">{{ item.product.category.name }}</small>
+                                        <br>
+                                        <small class="text-muted">Seller: {{ item.product.seller.get_full_name|default:item.product.seller.username }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>RWF {{ item.product.price }}</td>
+                            <td>
+                                <form method="post" action="{% url 'marketplace:update_cart_item' item.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <div class="input-group input-group-sm" style="width: 120px;">
+                                        <input type="number" name="quantity" value="{{ item.quantity }}"
+                                               min="1" max="{{ item.product.stock_quantity }}" class="form-control">
+                                        <button type="submit" class="btn btn-outline-primary">Update</button>
+                                    </div>
+                                </form>
+                            </td>
+                            <td>RWF {{ item.total_price }}</td>
+                            <td>
+                                <a href="{% url 'marketplace:remove_from_cart' item.id %}"
+                                   class="btn btn-sm btn-outline-danger"
+                                   onclick="return confirm('Remove this item from cart?')">Remove</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                            <td><strong>RWF {{ cart.total_price }}</strong></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Phone Status Alert -->
+            {% if not user.phone_number %}
+            <div class="alert alert-warning mt-3">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Phone Number Required:</strong> Please set your phone number in your
+                <a href="{% url 'accounts:profile' %}" class="alert-link">profile</a>
+                before checkout for order updates and delivery coordination.
+            </div>
+            {% endif %}
+
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{% url 'marketplace:product_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Continue Shopping
+                </a>
+                {% if user.phone_number %}
+                <a href="{% url 'marketplace:checkout' %}" class="btn btn-success btn-lg">
+                    <i class="fas fa-credit-card me-2"></i>Proceed to Checkout
+                </a>
+                {% else %}
+                <button class="btn btn-success btn-lg" disabled title="Please set your phone number first">
+                    <i class="fas fa-credit-card me-2"></i>Proceed to Checkout
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-shopping-cart fa-4x text-muted mb-3"></i>
+            <h3>Your cart is empty</h3>
+            <p class="text-muted">Start shopping to add items to your cart</p>
+            <a href="{% url 'marketplace:product_list' %}" class="btn btn-success btn-lg">
+                <i class="fas fa-search me-2"></i>Browse Products
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

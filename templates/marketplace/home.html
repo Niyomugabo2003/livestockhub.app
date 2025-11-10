@@ -1,0 +1,315 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}LivestockHub - Rwanda's Premier Livestock Marketplace{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">Find Quality Livestock in Rwanda</h1>
+                <p class="lead mb-4">Connect with trusted sellers and buyers across the country. From cattle to poultry, find the perfect livestock for your needs.</p>
+                <div class="d-flex gap-3">
+                    <a href="{% url 'marketplace:product_list' %}" class="btn btn-light btn-lg">
+                        <i class="fas fa-shopping-bag me-2"></i>Browse Products
+                    </a>
+                    {% if not user.is_authenticated %}
+                    <a href="{% url 'accounts:register' %}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-user-plus me-2"></i>Join Now
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-6 text-center">
+                <img src="https://images.unsplash.com/photo-1580570598977-4b2412d01bbc?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2067"
+                     alt="Livestock Farming" 
+                     class="img-fluid rounded shadow">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Categories Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h2 class="h1 mb-3">Browse by Category</h2>
+                <p class="lead text-muted">Explore our wide range of livestock categories</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            {% for category in categories %}
+            <div class="col-md-4 col-lg-2">
+                <a href="{% url 'marketplace:category_products' category.id %}" class="text-decoration-none">
+                    <div class="card category-card h-100 text-center">
+                        <div class="card-body p-3">
+                            {% if category.image %}
+                                <img src="{{ category.image.url }}" 
+                                     alt="{{ category.name }}"
+                                     class="img-fluid rounded-circle mb-3"
+                                     style="width: 80px; height: 80px; object-fit: cover;">
+                            {% else %}
+                                <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                     style="width: 80px; height: 80px;">
+                                    <i class="fas fa-paw text-white fa-2x"></i>
+                                </div>
+                            {% endif %}
+                            <h6 class="card-title mb-0 text-dark">{{ category.name }}</h6>
+                            {% if category.description %}
+                                <small class="text-muted">{{ category.description|truncatewords:5 }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12 text-center">
+                <a href="{% url 'marketplace:product_list' %}" class="btn btn-outline-primary">
+                    View All Categories <i class="fas fa-arrow-right ms-2"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Products Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h2 class="h1 mb-3">Featured Products</h2>
+                <p class="lead text-muted">Discover quality livestock from trusted sellers</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            {% for product in featured_products %}
+            <div class="col-md-6 col-lg-3">
+                <div class="card product-card h-100">
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" 
+                             class="card-img-top" 
+                             alt="{{ product.name }}"
+                             style="height: 200px; object-fit: cover;">
+                    {% else %}
+                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
+                             style="height: 200px;">
+                            <i class="fas fa-image fa-3x text-muted"></i>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="card-body">
+                        <h5 class="card-title">{{ product.name|truncatewords:4 }}</h5>
+                        <p class="card-text text-muted small">{{ product.description|truncatewords:10 }}</p>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="h5 text-primary mb-0">RWF {{ product.price }}</span>
+                            <span class="badge bg-{% if product.stock_quantity > 0 %}success{% else %}danger{% endif %}">
+                                {% if product.stock_quantity > 0 %}{{ product.stock_quantity }} in stock{% else %}Out of stock{% endif %}
+                            </span>
+                        </div>
+                        
+                        <small class="text-muted d-block mb-2">
+                            <i class="fas fa-tag me-1"></i>{{ product.get_livestock_type_display }}
+                        </small>
+                        
+                        <small class="text-muted d-block">
+                            <i class="fas fa-user me-1"></i>Seller: {{ product.seller.username }}
+                        </small>
+                    </div>
+                    
+                    <div class="card-footer bg-transparent">
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'marketplace:product_detail' product.id %}" 
+                               class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-eye me-1"></i>View Details
+                            </a>
+                            {% if user.is_authenticated and product.stock_quantity > 0 %}
+                            <a href="{% url 'marketplace:add_to_cart' product.id %}" 
+                               class="btn btn-primary btn-sm">
+                                <i class="fas fa-cart-plus me-1"></i>Add to Cart
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center">
+                <div class="py-5">
+                    <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
+                    <h4>No Featured Products</h4>
+                    <p class="text-muted">Check back later for featured livestock products.</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12 text-center">
+                <a href="{% url 'marketplace:product_list' %}" class="btn btn-primary btn-lg">
+                    View All Products <i class="fas fa-arrow-right ms-2"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="py-5 bg-dark text-white">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-md-3 mb-4">
+                <div class="stats-card">
+                    <i class="fas fa-users fa-3x mb-3"></i>
+                    <h3 class="h2">500+</h3>
+                    <p class="mb-0">Active Farmers</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="stats-card">
+                    <i class="fas fa-shopping-cart fa-3x mb-3"></i>
+                    <h3 class="h2">1,000+</h3>
+                    <p class="mb-0">Products Listed</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="stats-card">
+                    <i class="fas fa-map-marker-alt fa-3x mb-3"></i>
+                    <h3 class="h2">30+</h3>
+                    <p class="mb-0">Districts Covered</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="stats-card">
+                    <i class="fas fa-star fa-3x mb-3"></i>
+                    <h3 class="h2">98%</h3>
+                    <p class="mb-0">Satisfied Customers</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h2 class="h1 mb-3">How It Works</h2>
+                <p class="lead text-muted">Simple steps to buy and sell livestock</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-4 text-center">
+                <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                     style="width: 80px; height: 80px;">
+                    <i class="fas fa-user-plus text-white fa-2x"></i>
+                </div>
+                <h4>1. Create Account</h4>
+                <p class="text-muted">Sign up as a buyer or seller in just a few minutes.</p>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="bg-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                     style="width: 80px; height: 80px;">
+                    <i class="fas fa-search text-white fa-2x"></i>
+                </div>
+                <h4>2. Browse & Search</h4>
+                <p class="text-muted">Find the perfect livestock using our advanced filters.</p>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="bg-warning rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                     style="width: 80px; height: 80px;">
+                    <i class="fas fa-handshake text-white fa-2x"></i>
+                </div>
+                <h4>3. Connect & Trade</h4>
+                <p class="text-muted">Connect with sellers and complete your purchase securely.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-5 bg-primary text-white">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h2 class="h1 mb-3">Ready to Get Started?</h2>
+                <p class="lead mb-0">Join thousands of farmers and traders in Rwanda's largest livestock marketplace.</p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                {% if user.is_authenticated %}
+                <a href="{% url 'marketplace:product_list' %}" class="btn btn-light btn-lg">
+                    Browse Products <i class="fas fa-arrow-right ms-2"></i>
+                </a>
+                {% else %}
+                <a href="{% url 'accounts:register' %}" class="btn btn-light btn-lg me-2">
+                    Join Now <i class="fas fa-user-plus ms-2"></i>
+                </a>
+                <a href="{% url 'accounts:login' %}" class="btn btn-outline-light btn-lg">
+                    Sign In <i class="fas fa-sign-in-alt ms-2"></i>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.hero-section {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.9)), url('https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
+    background-size: cover;
+    background-position: center;
+    color: white;
+    padding: 120px 0;
+    position: relative;
+}
+
+.category-card, .product-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.category-card:hover, .product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card {
+    padding: 2rem 1rem;
+}
+
+.stats-card i {
+    opacity: 0.9;
+}
+
+.btn {
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+.card-img-top {
+    border-radius: 12px 12px 0 0;
+}
+
+.rounded-circle {
+    border-radius: 50% !important;
+}
+</style>
+{% endblock %}

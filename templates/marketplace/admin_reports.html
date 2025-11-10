@@ -1,0 +1,349 @@
+<!-- templates/marketplace/admin_reports.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Admin Analytics - LivestockHub{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1 text-gray-800">🏢 Admin Analytics Dashboard</h1>
+            <p class="text-muted">Real-time platform insights from delivered products</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#generateAdminReportModal">
+                <i class="fas fa-plus me-2"></i>New Report
+            </button>
+            <a href="?refresh=true" class="btn btn-outline-dark">
+                <i class="fas fa-sync-alt me-2"></i>Refresh Data
+            </a>
+        </div>
+    </div>
+
+    <!-- Platform Overview Stats -->
+    <div class="row mb-4">
+        <div class="col-xl-2 col-md-4 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Revenue
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">RWF {{ total_revenue|floatformat:0|intcomma }}</div>
+                            <div class="text-success text-xs">
+                                <i class="fas fa-dollar-sign me-1"></i>All Time
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total Orders
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_orders|intcomma }}</div>
+                            <div class="text-success text-xs">
+                                <i class="fas fa-shopping-cart me-1"></i>Completed
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Active Users
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_users }}</div>
+                            <div class="text-info text-xs">
+                                <i class="fas fa-user me-1"></i>Last 30 days
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Total Products
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_products }}</div>
+                            <div class="text-warning text-xs">
+                                <i class="fas fa-box me-1"></i>{{ active_products }} active
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-boxes fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Active Sellers
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_sellers }}</div>
+                            <div class="text-danger text-xs">
+                                <i class="fas fa-store me-1"></i>Last 30 days
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-store fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 mb-4">
+            <div class="card border-left-dark shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-dark text-uppercase mb-1">
+                                Low Stock Items
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ low_stock_products }}</div>
+                            <div class="text-danger text-xs">
+                                <i class="fas fa-exclamation-triangle me-1"></i>Need attention
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Row -->
+    <div class="row">
+        <!-- Revenue by Category -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Revenue by Category</h6>
+                </div>
+                <div class="card-body">
+                    {% if revenue_by_category %}
+                    <div class="chart-pie pt-4 pb-2">
+                        <canvas id="categoryChart" height="200"></canvas>
+                    </div>
+                    <div class="mt-4">
+                        {% for category in revenue_by_category %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>
+                                <i class="fas fa-circle text-{{ forloop.counter0|get_chart_color }} me-2"></i>
+                                {{ category.product__category__name|default:"Uncategorized" }}
+                            </span>
+                            <strong>RWF {{ category.revenue|floatformat:0|intcomma }}</strong>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No category revenue data available</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Sellers -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Top Performing Sellers</h6>
+                </div>
+                <div class="card-body">
+                    {% if top_sellers %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Seller</th>
+                                    <th>Revenue</th>
+                                    <th>Orders</th>
+                                    <th>Rating</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for seller in top_sellers %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-placeholder bg-{{ forloop.counter0|get_chart_color }} rounded-circle me-2 d-flex align-items-center justify-content-center text-white" style="width: 32px; height: 32px; font-size: 12px;">
+                                                {{ seller.username|first|upper }}
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold">{{ seller.get_full_name|default:seller.username }}</div>
+                                                <div class="text-muted small">{{ seller.email }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="fw-bold text-success">RWF {{ seller.total_revenue|floatformat:0|intcomma }}</td>
+                                    <td>{{ seller.total_orders }}</td>
+                                    <td>
+                                        {% if seller.avg_rating %}
+                                        <span class="badge bg-warning">{{ seller.avg_rating|floatformat:1 }} ★</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">No ratings</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-store fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No seller data available</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Platform Activity</h6>
+                    <span class="badge bg-primary">Live</span>
+                </div>
+                <div class="card-body">
+                    <div class="activity-feed">
+                        {% for order in recent_orders %}
+                        <div class="feed-item d-flex mb-3">
+                            <div class="feed-icon bg-success rounded-circle p-2 me-3">
+                                <i class="fas fa-shopping-cart text-white"></i>
+                            </div>
+                            <div class="feed-content flex-grow-1">
+                                <div class="fw-bold">New order placed</div>
+                                <div class="text-muted small">Order #{{ order.order_number }} for RWF {{ order.total_amount|floatformat:0|intcomma }}</div>
+                                <div class="text-muted smaller">{{ order.created_at|timesince }} ago</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        {% for seller in new_sellers %}
+                        <div class="feed-item d-flex mb-3">
+                            <div class="feed-icon bg-primary rounded-circle p-2 me-3">
+                                <i class="fas fa-user-plus text-white"></i>
+                            </div>
+                            <div class="feed-content flex-grow-1">
+                                <div class="fw-bold">New seller registered</div>
+                                <div class="text-muted small">{{ seller.get_full_name|default:seller.username }} joined the platform</div>
+                                <div class="text-muted smaller">{{ seller.date_joined|timesince }} ago</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        {% if low_stock_products > 0 %}
+                        <div class="feed-item d-flex mb-3">
+                            <div class="feed-icon bg-warning rounded-circle p-2 me-3">
+                                <i class="fas fa-exclamation-triangle text-white"></i>
+                            </div>
+                            <div class="feed-content flex-grow-1">
+                                <div class="fw-bold">Low stock alert</div>
+                                <div class="text-muted small">{{ low_stock_products }} products running low on inventory</div>
+                                <div class="text-muted smaller">Updated just now</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    border-radius: 0.5rem;
+}
+
+.border-left-primary { border-left: 0.25rem solid #4e73df !important; }
+.border-left-success { border-left: 0.25rem solid #1cc88a !important; }
+.border-left-info { border-left: 0.25rem solid #36b9cc !important; }
+.border-left-warning { border-left: 0.25rem solid #f6c23e !important; }
+.border-left-danger { border-left: 0.25rem solid #e74a3b !important; }
+.border-left-dark { border-left: 0.25rem solid #5a5c69 !important; }
+
+.chart-pie {
+    position: relative;
+    height: 200px;
+    width: 100%;
+}
+
+.avatar-placeholder {
+    font-weight: bold;
+}
+
+.feed-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Category Chart - Simplified: Remove the chart if it's causing errors
+    const categoryCtx = document.getElementById('categoryChart');
+    if (categoryCtx) {
+        // If there's category data, show the static HTML only
+        // Remove the chart canvas to avoid errors
+        categoryCtx.style.display = 'none';
+        
+        // Optionally show a message
+        const chartContainer = categoryCtx.closest('.chart-pie');
+        if (chartContainer) {
+            chartContainer.innerHTML = '<div class="text-center py-4"><p class="text-muted">Category revenue chart</p></div>';
+        }
+    }
+});
+</script>
+{% endblock %}

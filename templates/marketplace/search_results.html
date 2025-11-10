@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}Search Results - LivestockHub{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Search Results</h1>
+    
+    {% if search_query %}
+    <p class="lead">Showing results for "{{ search_query }}"</p>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-3">
+            <!-- Search filters can go here -->
+        </div>
+        
+        <div class="col-md-9">
+            <div class="row">
+                {% for product in products %}
+                <div class="col-md-4 mb-4">
+                    <div class="card product-card h-100">
+                        {% if product.image %}
+                        <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ product.name }}</h5>
+                            <p class="card-text">{{ product.description|truncatewords:20 }}</p>
+                            <p class="text-success font-weight-bold">RWF {{ product.price }}</p>
+                            <p class="text-muted">Stock: {{ product.stock_quantity }}</p>
+                            <a href="{% url 'marketplace:product_detail' product.id %}" class="btn btn-success btn-sm">View Details</a>
+                            {% if user.is_authenticated and product.stock_quantity > 0 %}
+                            <a href="{% url 'marketplace:add_to_cart' product.id %}" class="btn btn-outline-success btn-sm">Add to Cart</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <h4>No products found</h4>
+                        <p>Try adjusting your search criteria or browse all products.</p>
+                        <a href="{% url 'marketplace:product_list' %}" class="btn btn-success">Browse All Products</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

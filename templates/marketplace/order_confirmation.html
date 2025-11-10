@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Order Confirmation - LivestockHub{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body p-5 text-center">
+                    <!-- Success Icon -->
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    
+                    <h1 class="h2 mb-3">Order Confirmed!</h1>
+                    <p class="lead text-muted mb-4">
+                        Thank you for your purchase. Your order has been successfully placed.
+                    </p>
+
+                    <!-- Order Details -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Order Details</h5>
+                            <div class="row text-start">
+                                <div class="col-md-6">
+                                    <p><strong>Order Number:</strong> {{ order.order_number }}</p>
+                                    <p><strong>Order Date:</strong> {{ order.created_at|date:"M d, Y H:i" }}</p>
+                                    <p><strong>Status:</strong> 
+                                        <span class="badge bg-warning">{{ order.get_status_display }}</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Total Amount:</strong> RWF {{ order.total_amount }}</p>
+                                    <p><strong>Payment Method:</strong> {{ order.get_payment_method_display }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Shipping Information -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Shipping Information</h5>
+                            <div class="text-start">
+                                <p class="mb-2"><strong>Address:</strong></p>
+                                <p class="text-muted">{{ order.shipping_address|linebreaks }}</p>
+                                
+                                {% if order.shipping_city %}
+                                <p class="mb-1"><strong>City:</strong> {{ order.shipping_city }}</p>
+                                {% endif %}
+                                
+                                {% if order.shipping_phone %}
+                                <p class="mb-1"><strong>Phone:</strong> {{ order.shipping_phone }}</p>
+                                {% endif %}
+                                
+                                {% if order.notes %}
+                                <p class="mb-1"><strong>Notes:</strong></p>
+                                <p class="text-muted">{{ order.notes }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Order Items -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Order Items</h5>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Price</th>
+                                            <th>Quantity</th>
+                                            <th>Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in order.items.all %}
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    {% if item.product.image %}
+                                                        <img src="{{ item.product.image.url }}" 
+                                                             alt="{{ item.product.name }}"
+                                                             class="rounded me-3"
+                                                             style="width: 50px; height: 50px; object-fit: cover;">
+                                                    {% else %}
+                                                        <div class="bg-light rounded d-flex align-items-center justify-content-center me-3"
+                                                             style="width: 50px; height: 50px;">
+                                                            <i class="fas fa-image text-muted"></i>
+                                                        </div>
+                                                    {% endif %}
+                                                    <div>
+                                                        <strong>{{ item.product.name }}</strong>
+                                                        <br>
+                                                        <small class="text-muted">
+                                                            Seller: {{ item.product.seller.username }}
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>RWF {{ item.price }}</td>
+                                            <td>{{ item.quantity }}</td>
+                                            <td><strong>RWF {{ item.total_price }}</strong></td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                                            <td><strong>RWF {{ order.total_amount }}</strong></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Next Steps -->
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">What's Next?</h5>
+                            <div class="row text-center">
+                                <div class="col-md-4 mb-3">
+                                    <i class="fas fa-truck fa-2x mb-2"></i>
+                                    <p>We'll process your order and notify you when it ships</p>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <i class="fas fa-phone fa-2x mb-2"></i>
+                                    <p>Our team may contact you to confirm delivery details</p>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <i class="fas fa-clock fa-2x mb-2"></i>
+                                    <p>Expected delivery: 2-5 business days</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="mt-5">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <a href="{% url 'marketplace:customer_dashboard' %}" class="btn btn-outline-primary w-100 py-2">
+                                    <i class="fas fa-tachometer-alt me-2"></i>View Dashboard
+                                </a>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <a href="{% url 'marketplace:product_list' %}" class="btn btn-primary w-100 py-2">
+                                    <i class="fas fa-shopping-bag me-2"></i>Continue Shopping
+                                </a>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <button onclick="window.print()" class="btn btn-outline-secondary w-100 py-2">
+                                    <i class="fas fa-print me-2"></i>Print Order Details
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Support -->
+                    <div class="mt-4 pt-4 border-top">
+                        <p class="text-muted">
+                            Need help? <a href="#" class="text-decoration-none">Contact our support team</a> 
+                            or call us at <strong>+250 788 123 456</strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .btn, .navbar, .breadcrumb, footer {
+        display: none !important;
+    }
+    .card {
+        border: 1px solid #000 !important;
+        margin-bottom: 20px;
+    }
+}
+</style>
+{% endblock %}

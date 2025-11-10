@@ -1,0 +1,604 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Order #{{ order.order_number }} Details - LivestockHub{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Back Button -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <a href="{% url 'marketplace:seller_orders' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Orders
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Order Information -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Order Information</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Order Number:</th>
+                            <td>#{{ order.order_number }}</td>
+                        </tr>
+                        <tr>
+                            <th>Customer:</th>
+                            <td>{{ order.customer.get_full_name|default:order.customer.username }}</td>
+                        </tr>
+                        <tr>
+                            <th>Order Date:</th>
+                            <td>{{ order.created_at|date:"M d, Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Order Status:</th>
+                            <td>
+                                <form method="post" action="{% url 'marketplace:update_order_status' order.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <select name="status" class="form-select form-select-sm status-select" onchange="this.form.submit()">
+                                        <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
+                                        <option value="confirmed" {% if order.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                                        <option value="processing" {% if order.status == 'processing' %}selected{% endif %}>Processing</option>
+                                        <option value="shipped" {% if order.status == 'shipped' %}selected{% endif %}>Shipped</option>
+                                        <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                                        <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                    </select>
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Your Items Total:</th>
+                            <td class="h5 text-primary">RWF {{ order_total }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Shipping Information -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5>Shipping Information</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2"><strong>Address:</strong></p>
+                    <p class="text-muted">{{ order.shipping_address|linebreaks }}</p>
+                    
+                    {% if order.shipping_city %}
+                    <p class="mb-1"><strong>City:</strong> {{ order.shipping_city }}</p>
+                    {% endif %}
+                    
+                    {% if order.shipping_phone %}
+                    <p class="mb-1"><strong>Delivery Phone:</strong> {{ order.shipping_phone }} <small class="text-muted">(for delivery only)</small></p>
+                    {% endif %}
+                    
+                    {% if order.notes %}
+                    <p class="mb-1"><strong>Notes:</strong></p>
+                    <p class="text-muted">{{ order.notes }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'marketplace:seller_products' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-box me-2"></i>Manage Products
+                        </a>
+                        <a href="{% url 'marketplace:seller_orders' %}" class="btn btn-outline-info">
+                            <i class="fas fa-list me-2"></i>View All Orders
+                        </a>
+                        <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#contactCustomerModal">
+                            <i class="fas fa-comment me-2"></i>Contact Customer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Items -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>Your Products in This Order</h5>
+                    <span class="badge bg-primary">{{ seller_order_items.count }} items</span>
+                </div>
+                <div class="card-body">
+                    {% if seller_order_items %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Price</th>
+                                        <th>Quantity</th>
+                                        <th>Total</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in seller_order_items %}
+                                    <tr class="order-item-row" data-item-id="{{ item.id }}">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if item.product.image %}
+                                                    <img src="{{ item.product.image.url }}" 
+                                                         alt="{{ item.product.name }}"
+                                                         class="rounded me-3 product-image"
+                                                         style="width: 60px; height: 60px; object-fit: cover;">
+                                                {% else %}
+                                                    <div class="bg-light rounded d-flex align-items-center justify-content-center me-3 product-image"
+                                                         style="width: 60px; height: 60px;">
+                                                        <i class="fas fa-image text-muted"></i>
+                                                    </div>
+                                                {% endif %}
+                                                <div>
+                                                    <strong class="product-name">{{ item.product.name }}</strong>
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        Category: {{ item.product.category.name }}
+                                                    </small>
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        Type: {{ item.product.get_livestock_type_display }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>RWF {{ item.price }}</td>
+                                        <td>
+                                            <span class="badge bg-secondary rounded-pill">{{ item.quantity }}</span>
+                                        </td>
+                                        <td><strong>RWF {{ item.total_price }}</strong></td>
+                                        <td>
+                                            <span class="badge status-badge 
+                                                {% if item.status == 'delivered' %}bg-success
+                                                {% elif item.status == 'cancelled' %}bg-danger
+                                                {% elif item.status == 'shipped' %}bg-info
+                                                {% elif item.status == 'processing' %}bg-primary
+                                                {% elif item.status == 'confirmed' %}bg-warning
+                                                {% else %}bg-secondary{% endif %}">
+                                                {{ item.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-primary dropdown-toggle" 
+                                                        type="button" 
+                                                        data-bs-toggle="dropdown"
+                                                        aria-expanded="false">
+                                                    Update Status
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    {% for status_value, status_label in order_item_statuses %}
+                                                    <li>
+                                                        <form method="post" 
+                                                              action="{% url 'marketplace:update_order_item_status' item.id %}" 
+                                                              class="d-inline">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="status" value="{{ status_value }}">
+                                                            <button type="submit" 
+                                                                    class="dropdown-item status-update-btn
+                                                                           {% if item.status == status_value %}active{% endif %}"
+                                                                    data-item-id="{{ item.id }}"
+                                                                    data-new-status="{{ status_value }}"
+                                                                    data-product-name="{{ item.product.name }}">
+                                                                <i class="fas fa-circle me-2 
+                                                                    {% if status_value == 'delivered' %}text-success
+                                                                    {% elif status_value == 'cancelled' %}text-danger
+                                                                    {% elif status_value == 'shipped' %}text-info
+                                                                    {% elif status_value == 'processing' %}text-primary
+                                                                    {% elif status_value == 'confirmed' %}text-warning
+                                                                    {% else %}text-secondary{% endif %}"></i>
+                                                                {{ status_label }}
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <td colspan="3" class="text-end"><strong>Subtotal:</strong></td>
+                                        <td colspan="3"><strong>RWF {{ order_total }}</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <!-- Status Legend -->
+                        <div class="mt-4 p-3 bg-light rounded">
+                            <h6 class="mb-3"><i class="fas fa-info-circle me-2"></i>Status Legend:</h6>
+                            <div class="d-flex flex-wrap gap-2">
+                                <span class="badge bg-secondary"><i class="fas fa-clock me-1"></i>Pending</span>
+                                <span class="badge bg-warning"><i class="fas fa-check me-1"></i>Confirmed</span>
+                                <span class="badge bg-primary"><i class="fas fa-cog me-1"></i>Processing</span>
+                                <span class="badge bg-info"><i class="fas fa-shipping-fast me-1"></i>Shipped</span>
+                                <span class="badge bg-success"><i class="fas fa-box-check me-1"></i>Delivered</span>
+                                <span class="badge bg-danger"><i class="fas fa-times me-1"></i>Cancelled</span>
+                            </div>
+                        </div>
+
+                        <!-- Bulk Actions -->
+                        <div class="mt-4">
+                            <h6>Bulk Actions:</h6>
+                            <div class="btn-group">
+                                <form method="post" action="{% url 'marketplace:update_order_status' order.id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="status" value="processing">
+                                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-play me-1"></i>Mark All as Processing
+                                    </button>
+                                </form>
+                                <form method="post" action="{% url 'marketplace:update_order_status' order.id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="status" value="shipped">
+                                    <button type="submit" class="btn btn-outline-info btn-sm">
+                                        <i class="fas fa-shipping-fast me-1"></i>Mark All as Shipped
+                                    </button>
+                                </form>
+                                <form method="post" action="{% url 'marketplace:update_order_status' order.id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="status" value="delivered">
+                                    <button type="submit" class="btn btn-outline-success btn-sm">
+                                        <i class="fas fa-check-circle me-1"></i>Mark All as Delivered
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-exclamation-circle fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No items found in this order from your products.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Order Timeline -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5>Order Timeline</h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item {% if order.status != 'pending' %}completed{% endif %}">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <h6>Order Placed</h6>
+                                <small class="text-muted">{{ order.created_at|date:"M d, Y H:i" }}</small>
+                            </div>
+                        </div>
+                        <div class="timeline-item {% if order.status in 'confirmed,processing,shipped,delivered' %}completed{% endif %}">
+                            <div class="timeline-marker bg-warning"></div>
+                            <div class="timeline-content">
+                                <h6>Order Confirmed</h6>
+                                <small class="text-muted">Awaiting confirmation</small>
+                            </div>
+                        </div>
+                        <div class="timeline-item {% if order.status in 'processing,shipped,delivered' %}completed{% endif %}">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6>Processing</h6>
+                                <small class="text-muted">Preparing for shipment</small>
+                            </div>
+                        </div>
+                        <div class="timeline-item {% if order.status in 'shipped,delivered' %}completed{% endif %}">
+                            <div class="timeline-marker bg-info"></div>
+                            <div class="timeline-content">
+                                <h6>Shipped</h6>
+                                <small class="text-muted">On the way to customer</small>
+                            </div>
+                        </div>
+                        <div class="timeline-item {% if order.status == 'delivered' %}completed{% endif %}">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <h6>Delivered</h6>
+                                <small class="text-muted">Order completed</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contact Customer Modal - FIXED -->
+<div class="modal fade" id="contactCustomerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Contact Customer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Customer:</strong> {{ order.customer.get_full_name|default:order.customer.username }}</p>
+
+                <!-- Customer's account phone number -->
+                {% if order.customer.phone_number %}
+                <p><strong>Phone:</strong> {{ order.customer.phone_number }}</p>
+                {% else %}
+                <p><strong>Phone:</strong> <span class="text-warning">Not set in account</span></p>
+                {% endif %}
+
+                <p><strong>Email:</strong> {{ order.customer.email|default:"Not provided" }}</p>
+                
+                <!-- Show shipping phone only as additional info -->
+                {% if order.shipping_phone and order.shipping_phone != order.customer.phone %}
+                <p><strong>Delivery Phone:</strong> {{ order.shipping_phone }} <small class="text-muted">(for delivery only)</small></p>
+                {% endif %}
+
+                <div class="mt-3">
+                    <!-- Phone Selection -->
+                    <div class="mb-3">
+                        <label for="phoneSelect" class="form-label"><strong>Select Phone Number:</strong></label>
+                        <select class="form-select" id="phoneSelect" onchange="updateContactButtons()">
+                            {% if order.shipping_phone %}
+                            <option value="{{ order.shipping_phone }}" selected>📦 Delivery Phone: {{ order.shipping_phone }}</option>
+                            {% endif %}
+                            {% if order.customer.phone_number %}
+                            <option value="{{ order.customer.phone_number }}">👤 Account Phone: {{ order.customer.phone_number }}</option>
+                            {% endif %}
+                            {% if not order.shipping_phone and not order.customer.phone_number %}
+                            <option disabled>No phone numbers available</option>
+                            {% endif %}
+                        </select>
+                    </div>
+
+                    <!-- Contact Buttons (dynamically updated) -->
+                    <div id="contactButtons">
+                        {% if order.shipping_phone %}
+                        <a href="tel:{{ order.shipping_phone }}" class="btn btn-primary w-100 mb-2" id="callBtn">
+                            <i class="fas fa-phone me-2"></i>Call Selected Number
+                        </a>
+                        <a href="https://wa.me/{{ order.shipping_phone }}" class="btn btn-success w-100 mb-2" id="whatsappBtn" target="_blank">
+                            <i class="fab fa-whatsapp me-2"></i>WhatsApp Selected Number
+                        </a>
+                        {% elif order.customer.phone %}
+                        <a href="tel:{{ order.customer.phone }}" class="btn btn-primary w-100 mb-2" id="callBtn">
+                            <i class="fas fa-phone me-2"></i>Call Selected Number
+                        </a>
+                        <a href="https://wa.me/{{ order.customer.phone }}" class="btn btn-success w-100 mb-2" id="whatsappBtn" target="_blank">
+                            <i class="fab fa-whatsapp me-2"></i>WhatsApp Selected Number
+                        </a>
+                        {% else %}
+                        <button class="btn btn-outline-secondary w-100 mb-2" disabled>
+                            <i class="fas fa-phone me-2"></i>No Phone Available
+                        </button>
+                        {% endif %}
+                    </div>
+
+                    <!-- Email button -->
+                    {% if order.customer.email %}
+                    <a href="mailto:{{ order.customer.email }}" class="btn btn-outline-info w-100">
+                        <i class="fas fa-envelope me-2"></i>Send Email
+                    </a>
+                    {% else %}
+                    <button class="btn btn-outline-secondary w-100" disabled>
+                        <i class="fas fa-envelope me-2"></i>No Email Available
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.order-item-row {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.order-item-row:hover {
+    background-color: #f8f9fa;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.product-image {
+    transition: transform 0.3s ease;
+}
+
+.order-item-row:hover .product-image {
+    transform: scale(1.05);
+}
+
+.product-name {
+    transition: color 0.3s ease;
+}
+
+.order-item-row:hover .product-name {
+    color: #10b981;
+}
+
+.status-badge {
+    transition: all 0.3s ease;
+}
+
+.order-item-row:hover .status-badge {
+    transform: scale(1.1);
+}
+
+.dropdown-item.active {
+    background-color: #10b981;
+    border-color: #10b981;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(16, 185, 129, 0.05);
+}
+
+/* Timeline Styles */
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -30px;
+    top: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    z-index: 1;
+}
+
+.timeline-item.completed .timeline-marker {
+    background: #10b981 !important;
+}
+
+.timeline-content {
+    padding-bottom: 10px;
+}
+
+.status-select {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.875rem;
+}
+
+.status-select:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.25);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click functionality to order item rows
+    const orderItemRows = document.querySelectorAll('.order-item-row');
+    
+    orderItemRows.forEach(row => {
+        row.addEventListener('click', function(e) {
+            // Don't trigger if clicking on dropdown or button
+            if (!e.target.closest('.dropdown') && !e.target.closest('button')) {
+                const itemId = this.getAttribute('data-item-id');
+                // You can add functionality here, like showing item details
+                console.log('Clicked order item:', itemId);
+            }
+        });
+    });
+
+    // Add hover effects for status badges
+    const statusBadges = document.querySelectorAll('.status-badge');
+    
+    statusBadges.forEach(badge => {
+        badge.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.1)';
+        });
+        
+        badge.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+
+    // Status update confirmation
+    const statusUpdateButtons = document.querySelectorAll('.status-update-btn');
+    
+    statusUpdateButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            const newStatus = this.getAttribute('data-new-status');
+            const productName = this.getAttribute('data-product-name');
+            
+            if (newStatus === 'cancelled') {
+                if (!confirm(`Are you sure you want to cancel "${productName}"? This will notify the customer.`)) {
+                    e.preventDefault();
+                    return;
+                }
+            }
+            
+            if (newStatus === 'delivered') {
+                if (!confirm(`Mark "${productName}" as delivered? This action cannot be undone.`)) {
+                    e.preventDefault();
+                    return;
+                }
+            }
+            
+            // Show loading state
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating...';
+            this.disabled = true;
+            
+            // The form will submit automatically
+        });
+    });
+
+    // Order status change confirmation
+    const orderStatusSelects = document.querySelectorAll('.status-select');
+
+    orderStatusSelects.forEach(select => {
+        select.addEventListener('change', function(e) {
+            const newStatus = this.value;
+            const orderNumber = '{{ order.order_number }}';
+
+            if (newStatus === 'cancelled') {
+                if (!confirm(`Are you sure you want to cancel order #${orderNumber}? This will notify the customer.`)) {
+                    this.form.reset();
+                    return;
+                }
+            }
+
+            if (newStatus === 'delivered') {
+                if (!confirm(`Mark order #${orderNumber} as delivered? This action cannot be undone.`)) {
+                    this.form.reset();
+                    return;
+                }
+            }
+
+            // Show loading state
+            const originalText = this.options[this.selectedIndex].text;
+            this.disabled = true;
+            this.options[this.selectedIndex].text = 'Updating...';
+
+            // The form will submit automatically
+        });
+    });
+
+    // Phone selection functionality
+    window.updateContactButtons = function() {
+        const phoneSelect = document.getElementById('phoneSelect');
+        const selectedPhone = phoneSelect.value;
+        const callBtn = document.getElementById('callBtn');
+        const whatsappBtn = document.getElementById('whatsappBtn');
+
+        if (callBtn && whatsappBtn && selectedPhone) {
+            callBtn.href = `tel:${selectedPhone}`;
+            whatsappBtn.href = `https://wa.me/${selectedPhone}`;
+        }
+    };
+});
+</script>
+{% endblock %}

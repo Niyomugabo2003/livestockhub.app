@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ category.name }} - LivestockHub{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'marketplace:home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'marketplace:product_list' %}">Products</a></li>
+            <li class="breadcrumb-item active">{{ category.name }}</li>
+        </ol>
+    </nav>
+
+    <h1>{{ category.name }}</h1>
+    {% if category.description %}
+    <p class="lead">{{ category.description }}</p>
+    {% endif %}
+
+    <div class="row mt-4">
+        {% for product in products %}
+        <div class="col-md-4 mb-4">
+            <div class="card product-card h-100">
+                {% if product.main_image %}
+                <img src="{{ product.main_image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+                {% else %}
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                    <span class="text-muted">No Image</span>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ product.name }}</h5>
+                    <p class="card-text">{{ product.description|truncatewords:15 }}</p>
+                    <p class="text-success font-weight-bold">RWF {{ product.price }}</p>
+                    <p class="text-muted">Stock: {{ product.stock_quantity }}</p>
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'marketplace:product_detail' product.id %}" class="btn btn-success btn-sm">View Details</a>
+                        {% if user.is_authenticated and product.stock_quantity > 0 %}
+                        <a href="{% url 'marketplace:add_to_cart' product.id %}" class="btn btn-outline-success btn-sm">Add to Cart</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <h4>No products found in this category</h4>
+                <p>Check back later or browse other categories.</p>
+                <a href="{% url 'marketplace:product_list' %}" class="btn btn-success">Browse All Products</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

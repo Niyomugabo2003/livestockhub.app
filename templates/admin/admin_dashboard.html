@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard - LivestockHub{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h1>Admin Dashboard</h1>
+    
+    <!-- Stats Cards -->
+    <div class="row mt-4">
+        <div class="col-md-3 mb-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Users</h5>
+                    <h2 class="card-text">{{ total_users }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Sellers</h5>
+                    <h2 class="card-text">{{ total_sellers }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Products</h5>
+                    <h2 class="card-text">{{ total_products }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Orders</h5>
+                    <h2 class="card-text">{{ total_orders }}</h2>
+                </div>
+            </div>
+        </div>
+        {% if pending_sellers_count %}
+        <div class="col-md-3 mb-4">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Pending Sellers</h5>
+                    <h2 class="card-text">{{ pending_sellers_count }}</h2>
+                    <small>Requires attention</small>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Pending Actions -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Pending Seller Approvals</h5>
+                </div>
+                <div class="card-body">
+                    {% if pending_sellers %}
+                    <div class="list-group">
+                        {% for seller in pending_sellers %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ seller.username }}</strong>
+                                <br>
+                                <small>{{ seller.email }}</small>
+                                <br>
+                                <small class="text-muted">Registered: {{ seller.created_at|date:"M d, Y H:i" }}</small>
+                            </div>
+                            <form method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="user_id" value="{{ seller.id }}">
+                                <button type="submit" name="action" value="approve_seller" class="btn btn-sm btn-success">Approve</button>
+                            </form>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No pending seller approvals</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Recent Orders</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_orders %}
+                    <div class="list-group">
+                        {% for order in recent_orders %}
+                        <div class="list-group-item">
+                            <strong>#{{ order.order_number }}</strong>
+                            <br>
+                            <small>Customer: {{ order.customer.username }}</small>
+                            <br>
+                            <small>Amount: RWF {{ order.total_amount }}</small>
+                            <br>
+                            <span class="badge bg-{% if order.status == 'delivered' %}success{% elif order.status == 'cancelled' %}danger{% else %}warning{% endif %}">
+                                {{ order.get_status_display }}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No recent orders</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Quick Management</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'dashboard:user_management' %}" class="btn btn-outline-primary w-100">User Management</a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'dashboard:seller_management' %}" class="btn btn-outline-success w-100">Seller Management</a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'dashboard:product_management' %}" class="btn btn-outline-info w-100">Product Management</a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'dashboard:order_management' %}" class="btn btn-outline-warning w-100">Order Management</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

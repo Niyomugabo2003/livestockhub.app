@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Categories - LivestockHub{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h1>Manage Categories</h1>
+            <p class="lead">Create and manage product categories</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Add Category Form -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Add New Category</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <strong>Please correct the errors below:</strong>
+                            <ul>
+                                {% for field in form %}
+                                    {% for error in field.errors %}
+                                        <li>{{ field.label }}: {{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                                {% for error in form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }}</label>
+                            {{ form.name }}
+                            {% if form.name.help_text %}
+                                <div class="form-text">{{ form.name.help_text }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                            {{ form.description }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.parent.id_for_label }}" class="form-label">{{ form.parent.label }}</label>
+                            {{ form.parent }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.image.id_for_label }}" class="form-label">{{ form.image.label }}</label>
+                            {{ form.image }}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Create Category
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Categories List -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Existing Categories</h5>
+                </div>
+                <div class="card-body">
+                    {% if categories %}
+                        <div class="list-group">
+                            {% for category in categories %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">
+                                                {% if category.image %}
+                                                    <img src="{{ category.image.url }}" alt="{{ category.name }}" 
+                                                         class="rounded me-2" style="width: 30px; height: 30px; object-fit: cover;">
+                                                {% endif %}
+                                                {{ category.name }}
+                                            </h6>
+                                            {% if category.parent %}
+                                                <small class="text-muted">Parent: {{ category.parent.name }}</small>
+                                            {% else %}
+                                                <small class="text-success">Main Category</small>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <span class="badge bg-secondary">{{ category.products.count }} products</span>
+                                        </div>
+                                    </div>
+                                    {% if category.description %}
+                                        <p class="mb-1 mt-2">{{ category.description|truncatewords:20 }}</p>
+                                    {% endif %}
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            Created: {{ category.created_at|date:"M d, Y" }}
+                                            {% if not category.is_active %}
+                                                <span class="badge bg-danger ms-2">Inactive</span>
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-folder-open fa-3x mb-3"></i>
+                            <p>No categories found. Create your first category!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Category Tree -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5>Category Structure</h5>
+                </div>
+                <div class="card-body">
+                    {% if parent_categories %}
+                        <div class="category-tree">
+                            {% for parent in parent_categories %}
+                                <div class="category-item mb-2">
+                                    <strong>
+                                        <i class="fas fa-folder text-warning"></i>
+                                        {{ parent.name }}
+                                    </strong>
+                                    {% if parent.subcategories.exists %}
+                                        <div class="subcategories ms-4 mt-1">
+                                            {% for subcategory in parent.subcategories.all %}
+                                                <div class="subcategory-item">
+                                                    <i class="fas fa-folder text-info"></i>
+                                                    {{ subcategory.name }}
+                                                    {% if subcategory.subcategories.exists %}
+                                                        <div class="sub-subcategories ms-4">
+                                                            {% for subsub in subcategory.subcategories.all %}
+                                                                <div class="subsubcategory-item">
+                                                                    <i class="fas fa-folder text-success"></i>
+                                                                    {{ subsub.name }}
+                                                                </div>
+                                                            {% endfor %}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No categories available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.category-tree {
+    font-size: 0.9rem;
+}
+.category-item, .subcategory-item, .subsubcategory-item {
+    padding: 2px 0;
+}
+.subcategories, .sub-subcategories {
+    border-left: 2px solid #e9ecef;
+    padding-left: 10px;
+}
+</style>
+{% endblock %}

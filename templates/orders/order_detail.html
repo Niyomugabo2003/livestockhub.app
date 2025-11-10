@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+
+{% block title %}Order #{{ order.order_number }} - LivestockHub{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'marketplace:home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'orders:my_orders' %}">My Orders</a></li>
+            <li class="breadcrumb-item active">Order #{{ order.order_number }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">Order #{{ order.order_number }}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Order Details</h5>
+                            <p><strong>Order Date:</strong> {{ order.created_at|date:"F d, Y H:i" }}</p>
+                            <p><strong>Status:</strong> 
+                                <span class="badge bg-{% if order.status == 'delivered' %}success{% elif order.status == 'cancelled' %}danger{% else %}warning{% endif %}">
+                                    {{ order.get_status_display }}
+                                </span>
+                            </p>
+                            <p><strong>Total Amount:</strong> RWF {{ order.total_amount }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Shipping Information</h5>
+                            <p><strong>Address:</strong> {{ order.shipping_address }}</p>
+                            <p><strong>City:</strong> {{ order.shipping_city }}</p>
+                            <p><strong>Phone:</strong> {{ order.shipping_phone }}</p>
+                            {% if order.notes %}
+                            <p><strong>Notes:</strong> {{ order.notes }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <h5>Order Items</h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Price</th>
+                                    <th>Quantity</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order.items.all %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if item.product.image %}
+                                            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" 
+                                                 style="width: 50px; height: 50px; object-fit: cover;" class="me-3">
+                                            {% endif %}
+                                            <div>
+                                                <h6 class="mb-0">{{ item.product.name }}</h6>
+                                                <small class="text-muted">Sold by: {{ item.product.seller.username }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>RWF {{ item.price }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>RWF {{ item.total_price }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                                    <td><strong>RWF {{ order.total_amount }}</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Order Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'orders:my_orders' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left"></i> Back to Orders
+                        </a>
+                        <a href="{% url 'marketplace:product_list' %}" class="btn btn-outline-success">
+                            <i class="fas fa-shopping-bag"></i> Continue Shopping
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Order Status Timeline</h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item {% if order.status != 'pending' %}completed{% endif %}">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h6>Order Placed</h6>
+                                <small>{{ order.created_at|date:"M d, Y" }}</small>
+                            </div>
+                        </div>
+                        <div class="timeline-item {% if order.status in 'confirmed,processing,shipped,delivered' %}completed{% endif %}">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h6>Order Confirmed</h6>
+                            </div>
+                        </div>
+                        <div class="timeline-item {% if order.status in 'processing,shipped,delivered' %}completed{% endif %}">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h6>Processing</h6>
+                            </div>
+                        </div>
+                        <div class="timeline-item {% if order.status in 'shipped,delivered' %}completed{% endif %}">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h6>Shipped</h6>
+                            </div>
+                        </div>
+                        <div class="timeline-item {% if order.status == 'delivered' %}completed{% endif %}">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h6>Delivered</h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    .timeline-item {
+        position: relative;
+        margin-bottom: 20px;
+    }
+    .timeline-marker {
+        position: absolute;
+        left: -30px;
+        top: 0;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: #dee2e6;
+        border: 3px solid #fff;
+    }
+    .timeline-item.completed .timeline-marker {
+        background-color: #28a745;
+    }
+    .timeline-item:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        left: -21px;
+        top: 20px;
+        bottom: -20px;
+        width: 2px;
+        background-color: #dee2e6;
+    }
+    .timeline-item.completed:not(:last-child)::after {
+        background-color: #28a745;
+    }
+</style>
+{% endblock %}
